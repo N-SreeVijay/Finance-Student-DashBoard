@@ -21,8 +21,6 @@ lib-cov
 coverage
 *.lcov
 
-# Environment variables
-.env
 
 # Optional npm cache directory
 .npm
