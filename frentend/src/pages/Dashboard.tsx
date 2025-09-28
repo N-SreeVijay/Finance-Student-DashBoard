@@ -46,13 +46,21 @@ export default function Dashboard() {
         const res1 = await axios.get("http://localhost:5000/api/student/me", {
                   headers: { Authorization: `Bearer ${token}` }
                 });
+        const res2 = await axios.get("http://localhost:5000/api/stdfeedata/fe",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const feeData = res2.data;
+
+
 
         const data = res.data;
         const data1 = res1.data;
 
         const studentData = data1.student || data1; // fallback if plain object
         const paymentsData: DashboardPayment[] = data.payments || [];
-
+        // Then set totalPaid and totalDue directly
+       
         // Set student info
         setStudent({
           fullName: studentData.fullName || "-",
@@ -77,8 +85,8 @@ export default function Dashboard() {
           .slice(0, 5);
 
         setPayments(recentPayments);
-        setTotalPaid(totalPaidAmount);
-        setTotalDue(totalDueAmount);
+        setTotalPaid(feeData.totalPaid ?? 0);
+        setTotalDue(feeData.totalDue ?? 0);
 
       } catch (err: any) {
         toast.error(err.response?.data?.message || "Failed to load dashboard");

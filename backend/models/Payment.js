@@ -1,5 +1,4 @@
-
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
@@ -16,8 +15,9 @@ const paymentSchema = new mongoose.Schema({
   upiId: { type: String },
   merchantName: { type: String },
   status: { type: String, enum: ['paid', 'pending', 'processing', 'failed'], required: true },
+  notified: { type: Boolean, default: false }, // ✅ new field
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('Payment', paymentSchema);
+module.exports = mongoose.models.Payment || mongoose.model("Payment", paymentSchema);

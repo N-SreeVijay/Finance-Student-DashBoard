@@ -62,14 +62,15 @@ export interface Scholarship {
   };
 }
 
-export interface Notification {
-  id: string;
+export type Notification = {
+  id?: string;
+  type: "success" | "warning" | "reminder" | "info";
   title: string;
   message: string;
-  date: string;
-  type: 'info' | 'warning' | 'error' | 'success';
+  date: string | Date;
   read: boolean;
-}
+};
+
 
 export interface ChallanUpload {
   id: string;

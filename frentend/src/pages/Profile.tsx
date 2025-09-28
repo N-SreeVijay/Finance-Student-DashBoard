@@ -113,27 +113,7 @@ export default function Profile() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Picture and Basic Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Picture</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-4">
-            <Avatar className="w-24 h-24">
-              <AvatarFallback className="text-2xl">
-                {student.name.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center">
-              <h3 className="font-semibold">{student.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                {student.course} - {student.branch}
-              </p>
-              <Badge variant="secondary" className="mt-2">
-                Semester {student.currentSemester}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Personal Information */}
         <Card className="lg:col-span-2">
@@ -197,6 +177,28 @@ export default function Profile() {
                 <Label htmlFor="currentSemester">Current Semester</Label>
                 <Input id="currentSemester" value={student.currentSemester} disabled />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Picture</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center space-y-4">
+            <Avatar className="w-24 h-24">
+              <AvatarFallback className="text-2xl">
+                {student.name.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-center">
+              <h3 className="font-semibold">{student.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {student.course} - {student.branch}
+              </p>
+              <Badge variant="secondary" className="mt-2">
+                Semester {student.currentSemester}
+              </Badge>
             </div>
           </CardContent>
         </Card>

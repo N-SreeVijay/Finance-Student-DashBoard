@@ -1,24 +1,35 @@
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const Student = require("../models/Student");
-const Payment = require("../models/Payment");
-const StdFeeData = require("../models/stdFeedata");
-
-dotenv.config();
-require("../config/db")(); // connect to MongoDB
+const Student = require('../models/Student');
+const Payment = require('../models/Payment');
+const StdFeeData = require('../models/stdFeedata');
 
 async function updateStdFeeData() {
   try {
-    const students = await Student.find();
+    const students = await Student.find().lean();
 
     for (const student of students) {
-      const semFees = Number(student.semFees) || 0;
+      const semfees = Number(
+        student.semfees ?? student.semFees ?? student.semesterFees ?? 0
+      );
 
-      const payments = await Payment.find({ studentId: student._id, status: "paid" });
+      const payments = await Payment.find({
+        studentId: student._id,
+        status: 'paid',
+      }).lean();
 
-      const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const totalPaid = payments.reduce(
+        (sum, p) => sum + (Number(p.amount) || 0),
+        0
+      );
 
-      const totalDue = semFees - totalPaid;
+      const totalDue = semfees - totalPaid;
+
+      const paymentHistory = payments.map((p) => ({
+        _id: p._id,
+        amount: p.amount,
+        date: p.date,
+        method: p.method,
+        status: p.status,
+      }));
 
       const feeData = {
         studentId: student._id,
@@ -26,11 +37,11 @@ async function updateStdFeeData() {
         registrationNumber: student.registrationNumber,
         branch: student.branch,
         course: student.course,
-        currentSemester: student.semester,
-        semfees: semFees,
+        currentSemester: student.semester ?? student.currentSemester ?? 1,
+        semfees,
         totalPaid,
         totalDue,
-        payments, 
+        payments: paymentHistory,
       };
 
       await StdFeeData.findOneAndUpdate(
@@ -40,12 +51,10 @@ async function updateStdFeeData() {
       );
     }
 
-    console.log("StdFeeData updated successfully!");
-    process.exit(0);
+    console.log('Updated successfully!');
   } catch (err) {
-    console.error("Error updating StdFeeData:", err);
-    process.exit(1);
+    console.error('Error updating', err);
   }
 }
 
-updateStdFeeData();
+module.exports = { updateStdFeeData };

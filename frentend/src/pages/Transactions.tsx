@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import axios from 'axios';
 import { 
   Table, 
   TableBody, 
@@ -65,33 +65,29 @@ export default function Transactions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch data from API
   useEffect(() => {
     const fetchPayments = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('student_token'); // Adjust based on your auth setup
+        const token = localStorage.getItem('student_token');
         if (!token) {
           throw new Error('No authentication token found. Please log in.');
         }
 
-        const response = await fetch('http://localhost:5000/api/payments', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        // Get student profile (for semester info)
+        const studentRes = await axios.get("http://localhost:5000/api/student/me", {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Unauthorized: Please log in again.');
-          }
-          throw new Error(`Failed to fetch payments: ${response.statusText}`);
-        }
+        const studentData = studentRes.data;
 
-        const payments: Payment[] = await response.json();
+        // Get payments
+        const paymentsRes = await axios.get("http://localhost:5000/api/payments", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-        // Map database payments to Transaction type
+        const payments: Payment[] = paymentsRes.data;
+
         const mappedTransactions: Transaction[] = payments.map(payment => ({
           id: payment._id,
           paymentMethod: payment.method as PaymentMethod,
@@ -100,7 +96,7 @@ export default function Transactions() {
           challanNumber: payment.challanNumber,
           utrNumber: payment.utrNumber,
           transactionId: payment.transactionId,
-          semester: undefined, // Not in database; set to 'N/A' in UI
+          semester: studentData.semester, 
           status: payment.status as 'paid' | 'pending' | 'processing' | 'failed',
           verificationStatus: payment.status === 'paid' ? 'verified' : payment.status === 'failed' ? 'rejected' : 'pending',
         }));
@@ -123,9 +119,6 @@ export default function Transactions() {
       transaction.utrNumber,
       transaction.transactionId,
       transaction.semester,
-      // Optionally include registrationNo or studentName for search
-      // transaction.registrationNo,
-      // transaction.studentName,
     ].filter(Boolean).join(' ').toLowerCase();
     
     const matchesSearch = searchFields.includes(searchTerm.toLowerCase());
@@ -183,6 +176,43 @@ export default function Transactions() {
     return acc;
   }, {} as Record<PaymentMethod, number>);
 
+  const handleExport = () => {
+    if (transactions.length === 0) {
+      alert('No transactions available to export.');
+      return;
+    }
+
+    const headers = ['ID', 'Payment Method', 'Amount', 'Date', 'Challan Number', 'UTR Number', 'Transaction ID', 'Semester', 'Status', 'Verification Status'];
+    const csvRows = [
+      headers.join(','),
+      ...transactions.map(transaction =>
+        [
+          transaction.id,
+          transaction.paymentMethod,
+          transaction.amount,
+          new Date(transaction.date).toLocaleDateString(),
+          transaction.challanNumber || '',
+          transaction.utrNumber || '',
+          transaction.transactionId || '',
+          transaction.semester || '',
+          transaction.status,
+          transaction.verificationStatus || 'pending',
+        ].map(value => `"${value}"`).join(',')
+      ),
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'transactions.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -206,7 +236,7 @@ export default function Transactions() {
           <Receipt className="h-8 w-8 text-blue-600" />
           <h1 className="text-3xl font-bold">Transaction History</h1>
         </div>
-        <Button>
+        <Button onClick={handleExport} disabled={transactions.length === 0}>
           <Download className="mr-2 h-4 w-4" />
           Export All
         </Button>
